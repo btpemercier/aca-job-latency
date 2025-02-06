@@ -11,7 +11,7 @@ param projectName string
 
 var ContainerAppEnvironmentName = toLower('${projectName}-cae')
 var AppInsightsName = toLower('${projectName}-appi')
-var JobName = toLower('${projectName}-job')
+var AppName = toLower('${projectName}-api')
 var ManagedIdentityName = toLower('${projectName}-id')
 var AcrName = replace(('${projectName}-acr'), '-', '')
 var SqlServerName = toLower('${projectName}-sql')
@@ -41,8 +41,8 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   name: ManagedIdentityName
 }
 
-resource job 'Microsoft.App/jobs@2024-10-02-preview' = {
-  name: JobName
+resource app 'Microsoft.App/containerApps@2024-10-02-preview' = {
+  name: AppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -53,9 +53,6 @@ resource job 'Microsoft.App/jobs@2024-10-02-preview' = {
   properties: {
     environmentId: cae.id
     configuration: {
-      triggerType: 'Manual'
-      replicaTimeout: 180
-      replicaRetryLimit: 0
       registries: [
         {
           server: acr.properties.loginServer
@@ -67,7 +64,7 @@ resource job 'Microsoft.App/jobs@2024-10-02-preview' = {
       containers: [
         {
           name: 'main'
-          image: '${acr.properties.loginServer}/${projectName}:latest'
+          image: '${acr.properties.loginServer}/${projectName}-api:latest'
           env: [
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -75,13 +72,34 @@ resource job 'Microsoft.App/jobs@2024-10-02-preview' = {
             }
             {
               name: 'SQLCONNSTR_DefaultConnection'
-              value:  'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName};Database=${DatabaseName};Authentication=Active Directory Default;User Id=${managedIdentity.properties.clientId};Connection Timeout=30;'
+              value: 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName};Database=${DatabaseName};Authentication=Active Directory Default;User Id=${managedIdentity.properties.clientId};Connection Timeout=30;'
             }
           ]
           resources: {
             cpu: 1
             memory: '2Gi'
           }
+          probes: [
+            {
+              type: 'Liveness'
+              httpGet: {
+                path: '/health/live'
+                port: 8080
+              }
+              initialDelaySeconds: 1
+              periodSeconds: 10
+              timeoutSeconds: 5
+            }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: '/health/ready'
+                port: 8080
+              }
+              periodSeconds: 10
+              timeoutSeconds: 5
+            }
+          ]
         }
       ]
     }

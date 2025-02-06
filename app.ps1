@@ -13,11 +13,11 @@ param(
 # Build and push container image
 # ------------------------
 
-Write-Host "Building and pushing container image..."
+Write-Host "Building and pushing job image..."
 
-$sourcePath = "src/Demo"
+$sourcePath = "src/DemoApi"
 
-$containerImageName = $ProjectName.ToLower()
+$containerImageName = "$($ProjectName.ToLower())-api"
 $containerImageTag = "latest"
 
 $acrName = "$($ProjectName.ToLower())acr".Replace("-", "")
@@ -31,11 +31,11 @@ az acr login --name $acrName
 docker push $fullImageName
 
 # ------------------------
-# Deploy Container Bicep Template
+# Deploy Jon Bicep Template
 # ------------------------
 
 Write-Host "Deploying container to Azure..."
 
 $resourceGroupName = $ProjectName + "-rg"
 
-New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile .\container.bicep -TemplateParameterObject @{ projectName = $ProjectName }
+New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile .\app.bicep -TemplateParameterObject @{ projectName = $ProjectName }

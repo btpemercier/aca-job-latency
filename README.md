@@ -55,11 +55,30 @@ ALTER ROLE db_ddladmin ADD MEMBER [manage-identity-name];
 GO
 ```
 
+3) Allow azure network to access the sql server.
+
+![allow-network](./images/allow-network.png)
+
+## Deploy the container app job
+
+```powershell
+./job.ps1 myproject northeurope
+```
+
 ## Deploy the container app
 
 ```powershell
-./container-app.ps1 myproject northeurope
+./app.ps1 myproject northeurope
 ```
+
+## Observe the app latency
+
+1) Open the azure portal and navigate to the `Application insights`.
+2) Open the `Transactions search` blade.
+
+You can observe the job latency :
+
+![Latency](./images/latency-app-insight.png)
 
 ## Observe the job latency
 
@@ -68,7 +87,7 @@ GO
 
 You can observe the job latency :
 
-![Latency](./images/latency-app-insight.png)
+![Latency](./images/latency-app-job-insight.png)
 
 ## Clean up
 
